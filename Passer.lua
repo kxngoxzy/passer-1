@@ -16,44 +16,44 @@ local toggleGUIKey = defaultToggleGUIKey
 local guiOpen = true
 
 -- // TOOL CREATION
+local clickTool
+
 local function createClickTool()
-	if LocalPlayer.Backpack:FindFirstChild("Click Tool") then
-		return
-	end
-	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Click Tool") then
+	if clickTool and clickTool.Parent then
 		return
 	end
 
-	local tool = Instance.new("Tool")
-	tool.Name = "Click Tool"
-	tool.RequiresHandle = false
-	tool.CanBeDropped = false
+	clickTool = Instance.new("Tool")
+	clickTool.Name = "Click Tool"
+	clickTool.RequiresHandle = false
+	clickTool.CanBeDropped = false
 
-	local mouse
-	tool.Equipped:Connect(function(m)
-		mouse = m
-	end)
-
-	tool.Activated:Connect(function()
-		if mouse and mouse.Target then
+	local mouse = LocalPlayer:GetMouse()
+	clickTool.Activated:Connect(function()
+		if mouse.Target then
 			local char = mouse.Target:FindFirstAncestorOfClass("Model")
 			local player = char and Players:GetPlayerFromCharacter(char)
 			if player then
 				selectedPlayer = player
-				selectedPlayerBox.Text = selectedPlayer.Name
-				manualInputBox.Text = ""
-				manualInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+				if selectedPlayerBox then
+					selectedPlayerBox.Text = selectedPlayer.Name
+				end
+				if manualInputBox then
+					manualInputBox.Text = ""
+					manualInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+				end
 			end
 		end
 	end)
 
-	tool.Parent = LocalPlayer.Backpack
+	clickTool.Parent = LocalPlayer.Backpack
 end
 
 LocalPlayer.CharacterAdded:Connect(function()
 	task.wait(1)
 	createClickTool()
 end)
+
 task.wait(0.5)
 createClickTool()
 
@@ -150,7 +150,7 @@ CornerSel.CornerRadius = UDim.new(0, 8)
 CornerSel.Parent = selectedPlayerBox
 
 -- Manual input box
-local manualInputBox = Instance.new("TextBox")
+manualInputBox = Instance.new("TextBox")
 manualInputBox.Size = UDim2.new(1, -20, 0, 25)
 manualInputBox.Position = UDim2.new(0, 10, 0, 75)
 manualInputBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
