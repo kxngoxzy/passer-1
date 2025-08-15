@@ -1,6 +1,6 @@
 -- // CONFIG
 local PASS_COMMAND = "/passto"
-local defaultPassKey = Enum.KeyCode.Q
+local defaultPassKey = Enum.KeyCode.T
 local defaultToggleGUIKey = Enum.KeyCode.P
 
 -- // SERVICES
@@ -20,6 +20,9 @@ local function createClickTool()
 	if LocalPlayer.Backpack:FindFirstChild("Click Tool") then
 		return
 	end
+	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Click Tool") then
+		return
+	end
 
 	local tool = Instance.new("Tool")
 	tool.Name = "Click Tool"
@@ -27,17 +30,21 @@ local function createClickTool()
 	tool.CanBeDropped = false
 
 	local mouse
-	tool.Equipped:Connect(function()
-		mouse = LocalPlayer:GetMouse()
-		mouse.Button1Down:Connect(function()
-			if mouse.Target then
-				local char = mouse.Target:FindFirstAncestorOfClass("Model")
-				if char and Players:GetPlayerFromCharacter(char) then
-					selectedPlayer = Players:GetPlayerFromCharacter(char)
-					usernameLabel.Text = "Selected: " .. selectedPlayer.Name
-				end
+	tool.Equipped:Connect(function(m)
+		mouse = m
+	end)
+
+	tool.Activated:Connect(function()
+		if mouse and mouse.Target then
+			local char = mouse.Target:FindFirstAncestorOfClass("Model")
+			local player = char and Players:GetPlayerFromCharacter(char)
+			if player then
+				selectedPlayer = player
+				selectedPlayerBox.Text = selectedPlayer.Name
+				manualInputBox.Text = ""
+				manualInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 			end
-		end)
+		end
 	end)
 
 	tool.Parent = LocalPlayer.Backpack
@@ -47,10 +54,8 @@ LocalPlayer.CharacterAdded:Connect(function()
 	task.wait(1)
 	createClickTool()
 end)
-
-if LocalPlayer.Character then
-	createClickTool()
-end
+task.wait(0.5)
+createClickTool()
 
 -- // GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
@@ -58,7 +63,7 @@ ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 180)
+MainFrame.Size = UDim2.new(0, 340, 0, 250)
 MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.Active = true
@@ -72,130 +77,177 @@ UICornerMain.Parent = MainFrame
 
 -- Header
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -20, 0, 25)
+Title.Size = UDim2.new(1, -60, 0, 30)
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "PASSER SCRIPT BY SIAH"
 Title.TextSize = 18
-Title.Font = Enum.Font.GothamBold
+Title.Font = Enum.Font.ArialBold
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- Username label
-usernameLabel = Instance.new("TextLabel")
-usernameLabel.Size = UDim2.new(1, -20, 0, 25)
-usernameLabel.Position = UDim2.new(0, 10, 0, 30)
-usernameLabel.BackgroundTransparency = 1
-usernameLabel.Text = "Selected: None"
-usernameLabel.TextSize = 14
-usernameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-usernameLabel.Font = Enum.Font.Arial
-usernameLabel.TextXAlignment = Enum.TextXAlignment.Left
-usernameLabel.Parent = MainFrame
+-- Minimize button
+local MinButton = Instance.new("TextButton")
+MinButton.Size = UDim2.new(0, 30, 0, 30)
+MinButton.Position = UDim2.new(1, -70, 0, 0)
+MinButton.Text = "-"
+MinButton.TextSize = 18
+MinButton.BackgroundColor3 = MainFrame.BackgroundColor3
+MinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinButton.Parent = MainFrame
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 15)
+MinCorner.Parent = MinButton
+MinButton.MouseEnter:Connect(function()
+	MinButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+end)
+MinButton.MouseLeave:Connect(function()
+	MinButton.BackgroundColor3 = MainFrame.BackgroundColor3
+end)
+MinButton.MouseButton1Click:Connect(function()
+	guiOpen = not guiOpen
+	MainFrame.Size = guiOpen and UDim2.new(0, 340, 0, 250) or UDim2.new(0, 340, 0, 40)
+end)
 
--- Function to create keybind labels
-local function createKeybindLabel(parent, name, currentKey)
-	local label = Instance.new("TextButton")
-	label.Size = UDim2.new(1, -20, 0, 25)
-	label.Position = UDim2.new(0, 10, 0, (#parent:GetChildren() - 1) * 30)
-	label.BackgroundColor3 = MainFrame.BackgroundColor3
-	label.BorderSizePixel = 0
-	label.TextColor3 = Color3.fromRGB(255, 255, 255)
-	label.TextSize = 14
-	label.Font = Enum.Font.Arial
-	label.Text = name .. ": " .. currentKey.Name
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = parent
-
-	label.MouseButton1Click:Connect(function()
-		label.Text = name .. ": Press a key..."
-		local conn
-		conn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-			if input.UserInputType == Enum.UserInputType.Keyboard then
-				if name == "Pass Key" then
-					passKey = input.KeyCode
-				elseif name == "Toggle GUI Key" then
-					toggleGUIKey = input.KeyCode
-				end
-				label.Text = name .. ": " .. input.KeyCode.Name
-				conn:Disconnect()
-			end
-		end)
-	end)
-
-	return label
-end
-
--- Keybind dropdown frame
-local KeybindFrame = Instance.new("Frame")
-KeybindFrame.Size = UDim2.new(1, -20, 0, 60)
-KeybindFrame.Position = UDim2.new(0, 10, 0, 60)
-KeybindFrame.BackgroundColor3 = MainFrame.BackgroundColor3
-KeybindFrame.Parent = MainFrame
-
-local KeybindCorner = Instance.new("UICorner")
-KeybindCorner.CornerRadius = UDim.new(0, 10)
-KeybindCorner.Parent = KeybindFrame
-
--- Create keybind labels
-local passKeyLabel = createKeybindLabel(KeybindFrame, "Pass Key", passKey)
-local toggleKeyLabel = createKeybindLabel(KeybindFrame, "Toggle GUI Key", toggleGUIKey)
-
--- Close button circular
+-- Close button
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 30, 0, 30)
 CloseButton.Position = UDim2.new(1, -35, 0, 0)
 CloseButton.Text = "X"
-CloseButton.TextSize = 16
+CloseButton.TextSize = 18
 CloseButton.BackgroundColor3 = MainFrame.BackgroundColor3
 CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseButton.Parent = MainFrame
-
 local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 15)
 CloseCorner.Parent = CloseButton
-
 CloseButton.MouseEnter:Connect(function()
 	CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 end)
 CloseButton.MouseLeave:Connect(function()
 	CloseButton.BackgroundColor3 = MainFrame.BackgroundColor3
 end)
-
 CloseButton.MouseButton1Click:Connect(function()
 	ScreenGui:Destroy()
 end)
 
--- Collapse/Hide button circular
-local CollapseButton = Instance.new("TextButton")
-CollapseButton.Size = UDim2.new(0, 30, 0, 30)
-CollapseButton.Position = UDim2.new(1, -70, 0, 0)
-CollapseButton.Text = "-"
-CollapseButton.TextSize = 16
-CollapseButton.BackgroundColor3 = MainFrame.BackgroundColor3
-CollapseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CollapseButton.Parent = MainFrame
+-- Selected Player display box
+selectedPlayerBox = Instance.new("TextBox")
+selectedPlayerBox.Size = UDim2.new(1, -20, 0, 25)
+selectedPlayerBox.Position = UDim2.new(0, 10, 0, 40)
+selectedPlayerBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+selectedPlayerBox.Text = "Selected Player"
+selectedPlayerBox.TextEditable = false
+selectedPlayerBox.TextSize = 14
+selectedPlayerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+selectedPlayerBox.Font = Enum.Font.Arial
+selectedPlayerBox.TextXAlignment = Enum.TextXAlignment.Left
+selectedPlayerBox.BorderSizePixel = 0
+selectedPlayerBox.Parent = MainFrame
+local CornerSel = Instance.new("UICorner")
+CornerSel.CornerRadius = UDim.new(0, 8)
+CornerSel.Parent = selectedPlayerBox
 
-local CollapseCorner = Instance.new("UICorner")
-CollapseCorner.CornerRadius = UDim.new(0, 15)
-CollapseCorner.Parent = CollapseButton
+-- Manual input box
+local manualInputBox = Instance.new("TextBox")
+manualInputBox.Size = UDim2.new(1, -20, 0, 25)
+manualInputBox.Position = UDim2.new(0, 10, 0, 75)
+manualInputBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+manualInputBox.BorderSizePixel = 0
+manualInputBox.Text = "Type username or display name"
+manualInputBox.TextSize = 14
+manualInputBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+manualInputBox.Font = Enum.Font.Arial
+manualInputBox.TextXAlignment = Enum.TextXAlignment.Left
+manualInputBox.ClearTextOnFocus = false
+manualInputBox.Parent = MainFrame
+local CornerManual = Instance.new("UICorner")
+CornerManual.CornerRadius = UDim.new(0, 8)
+CornerManual.Parent = manualInputBox
 
-CollapseButton.MouseEnter:Connect(function()
-	CollapseButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+-- Manual input focus behavior
+manualInputBox.Focused:Connect(function()
+	if manualInputBox.Text == "Type username or display name" then
+		manualInputBox.Text = ""
+		manualInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
 end)
-CollapseButton.MouseLeave:Connect(function()
-	CollapseButton.BackgroundColor3 = MainFrame.BackgroundColor3
+
+manualInputBox.FocusLost:Connect(function()
+	local typedName = manualInputBox.Text:lower()
+	if typedName == "" then
+		manualInputBox.Text = "Type username or display name"
+		manualInputBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+		return
+	end
+	local foundPlayer = nil
+	for _, p in pairs(Players:GetPlayers()) do
+		if p.Name:lower():find(typedName) or p.DisplayName:lower():find(typedName) then
+			foundPlayer = p
+			break
+		end
+	end
+	if foundPlayer then
+		selectedPlayer = foundPlayer
+		selectedPlayerBox.Text = selectedPlayer.Name
+	else
+		selectedPlayer = nil
+		selectedPlayerBox.Text = "Selected Player"
+	end
 end)
 
-CollapseButton.MouseButton1Click:Connect(function()
-	guiOpen = not guiOpen
-	MainFrame.Size = guiOpen and UDim2.new(0, 300, 0, 180) or UDim2.new(0, 300, 0, 40)
-	usernameLabel.Visible = guiOpen
-	KeybindFrame.Visible = guiOpen
-end)
+-- Keybind boxes
+local function createKeybindBox(labelText, defaultKey, yPos)
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(0.5, -15, 0, 25)
+	lbl.Position = UDim2.new(0, 10, 0, yPos)
+	lbl.BackgroundColor3 = MainFrame.BackgroundColor3
+	lbl.BorderSizePixel = 0
+	lbl.Text = labelText
+	lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.Font = Enum.Font.Arial
+	lbl.TextSize = 14
+	lbl.Parent = MainFrame
 
--- Detect key presses (fixed: only assigned keys trigger actions)
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.new(0.5, -15, 0, 25)
+	box.Position = UDim2.new(0.5, 0, 0, yPos)
+	box.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	box.BorderSizePixel = 0
+	box.Text = defaultKey.Name:sub(1, 1)
+	box.TextColor3 = Color3.fromRGB(255, 255, 255)
+	box.TextSize = 14
+	box.Font = Enum.Font.Arial
+	box.TextXAlignment = Enum.TextXAlignment.Left
+	box.ClearTextOnFocus = false
+	box.Parent = MainFrame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = box
+
+	box.Focused:Connect(function()
+		box.Text = ""
+		local conn
+		conn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+			if input.UserInputType == Enum.UserInputType.Keyboard then
+				box.Text = input.KeyCode.Name:sub(1, 1)
+				if labelText == "Pass Key" then
+					passKey = input.KeyCode
+				else
+					toggleGUIKey = input.KeyCode
+				end
+				conn:Disconnect()
+			end
+		end)
+	end)
+end
+
+createKeybindBox("Pass Key", passKey, 120)
+createKeybindBox("Toggle GUI Key", toggleGUIKey, 155)
+
+-- Key press detection
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then
 		return
@@ -204,7 +256,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		return
 	end
 
-	-- Pass key
 	if input.KeyCode == passKey and selectedPlayer then
 		local chatEvent = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
 		if chatEvent and chatEvent:FindFirstChild("SayMessageRequest") then
@@ -214,7 +265,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		end
 	end
 
-	-- Toggle GUI key
 	if input.KeyCode == toggleGUIKey then
 		guiOpen = not guiOpen
 		MainFrame.Visible = guiOpen
