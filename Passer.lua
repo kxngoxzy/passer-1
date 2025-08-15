@@ -16,44 +16,45 @@ local toggleGUIKey = defaultToggleGUIKey
 local guiOpen = true
 
 -- // TOOL CREATION
-local clickTool
-
 local function createClickTool()
-	if clickTool and clickTool.Parent then
+	if LocalPlayer.Backpack:FindFirstChild("Click Tool") then
+		return
+	end
+	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Click Tool") then
 		return
 	end
 
-	clickTool = Instance.new("Tool")
-	clickTool.Name = "Click Tool"
-	clickTool.RequiresHandle = false
-	clickTool.CanBeDropped = false
+	local tool = Instance.new("Tool")
+	tool.Name = "Click Tool"
+	tool.RequiresHandle = false
+	tool.CanBeDropped = false
 
-	local mouse = LocalPlayer:GetMouse()
-	clickTool.Activated:Connect(function()
-		if mouse.Target then
+	local mouse
+	tool.Equipped:Connect(function(m)
+		mouse = m
+	end)
+
+	tool.Activated:Connect(function()
+		if mouse and mouse.Target then
 			local char = mouse.Target:FindFirstAncestorOfClass("Model")
 			local player = char and Players:GetPlayerFromCharacter(char)
 			if player then
 				selectedPlayer = player
-				if selectedPlayerBox then
-					selectedPlayerBox.Text = selectedPlayer.Name
-				end
-				if manualInputBox then
-					manualInputBox.Text = ""
-					manualInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-				end
+				selectedPlayerBox.Text = selectedPlayer.Name
+				manualInputBox.Text = ""
+				manualInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 			end
 		end
 	end)
 
-	clickTool.Parent = LocalPlayer.Backpack
+	tool.Parent = LocalPlayer.Backpack
 end
 
+-- Give tool initially and on respawn
 LocalPlayer.CharacterAdded:Connect(function()
 	task.wait(1)
 	createClickTool()
 end)
-
 task.wait(0.5)
 createClickTool()
 
@@ -166,7 +167,6 @@ local CornerManual = Instance.new("UICorner")
 CornerManual.CornerRadius = UDim.new(0, 8)
 CornerManual.Parent = manualInputBox
 
--- Manual input focus behavior
 manualInputBox.Focused:Connect(function()
 	if manualInputBox.Text == "Type username or display name" then
 		manualInputBox.Text = ""
