@@ -1,21 +1,17 @@
--- // CONFIG
 local PASS_COMMAND = "/passto"
 local defaultPassKey = Enum.KeyCode.T
 local defaultToggleGUIKey = Enum.KeyCode.P
 
--- // SERVICES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- // VARS
 local selectedPlayer = nil
 local passKey = defaultPassKey
 local toggleGUIKey = defaultToggleGUIKey
 local guiOpen = true
 
--- // TOOL CREATION
 local function createClickTool()
 	if LocalPlayer.Backpack:FindFirstChild("Click Tool") then
 		return
@@ -50,7 +46,6 @@ local function createClickTool()
 	tool.Parent = LocalPlayer.Backpack
 end
 
--- Give tool initially and on respawn
 LocalPlayer.CharacterAdded:Connect(function()
 	task.wait(1)
 	createClickTool()
@@ -58,7 +53,6 @@ end)
 task.wait(0.5)
 createClickTool()
 
--- // GUI CREATION
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
@@ -76,7 +70,6 @@ local UICornerMain = Instance.new("UICorner")
 UICornerMain.CornerRadius = UDim.new(0, 15)
 UICornerMain.Parent = MainFrame
 
--- Header
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -60, 0, 30)
 Title.Position = UDim2.new(0, 10, 0, 0)
@@ -88,7 +81,6 @@ Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- Minimize button
 local MinButton = Instance.new("TextButton")
 MinButton.Size = UDim2.new(0, 30, 0, 30)
 MinButton.Position = UDim2.new(1, -70, 0, 0)
@@ -111,7 +103,6 @@ MinButton.MouseButton1Click:Connect(function()
 	MainFrame.Size = guiOpen and UDim2.new(0, 340, 0, 250) or UDim2.new(0, 340, 0, 40)
 end)
 
--- Close button
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 30, 0, 30)
 CloseButton.Position = UDim2.new(1, -35, 0, 0)
@@ -133,7 +124,6 @@ CloseButton.MouseButton1Click:Connect(function()
 	ScreenGui:Destroy()
 end)
 
--- Selected Player display box
 selectedPlayerBox = Instance.new("TextBox")
 selectedPlayerBox.Size = UDim2.new(1, -20, 0, 25)
 selectedPlayerBox.Position = UDim2.new(0, 10, 0, 40)
@@ -150,7 +140,6 @@ local CornerSel = Instance.new("UICorner")
 CornerSel.CornerRadius = UDim.new(0, 8)
 CornerSel.Parent = selectedPlayerBox
 
--- Manual input box
 manualInputBox = Instance.new("TextBox")
 manualInputBox.Size = UDim2.new(1, -20, 0, 25)
 manualInputBox.Position = UDim2.new(0, 10, 0, 75)
@@ -197,7 +186,6 @@ manualInputBox.FocusLost:Connect(function()
 	end
 end)
 
--- Keybind boxes
 local function createKeybindBox(labelText, defaultKey, yPos)
 	local lbl = Instance.new("TextLabel")
 	lbl.Size = UDim2.new(0.5, -15, 0, 25)
@@ -247,7 +235,6 @@ end
 createKeybindBox("Pass Key", passKey, 120)
 createKeybindBox("Toggle GUI Key", toggleGUIKey, 155)
 
--- Key press detection
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then
 		return
